@@ -9,8 +9,9 @@ ue.ps1 sets these for every run:
   UE_RENDER_RENDERS  the root folder Movie Render Queue writes into
 
 Rules these helpers keep (each one cost hours once):
-  * every build makes NEW assets with a run stamp in the name: a new level, sequence, config and output folder. Nothing
-    is overwritten, so any earlier render can be reproduced and compared.
+  * every build makes NEW assets with a run stamp: a new level, sequence, config and output folder, and its materials in
+    a Run_<stamp> folder of their own (materials.run_folder). Nothing an earlier build used is overwritten, so any
+    earlier render can be reproduced and compared.
   * your assets live under one /Game folder of your own (ROOT, default /Game/MyRenders): a sample project's content is
     never renamed or edited in place, so the sample can be updated from the launcher.
   * anything made by script is saved explicitly (save_new_assets): saving the level does not save new material

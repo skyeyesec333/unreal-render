@@ -17,6 +17,7 @@
 ## Licences and credits
 
 - Epic's free samples and Fab's "Standard License" content may be used in renders; redistributing the **assets themselves** (the meshes, textures, the project) is not allowed. Ship frames and video, never the content files, and never commit them to a repository.
+- **"UE-Only" content** (Epic marks some samples so, City Sample among them; the label is on the item's Fab page) may only be used in combination with Unreal Engine: rendered frames and video made in Unreal are fine, but exporting its meshes or textures to Blender, three.js or another engine is not. Other Fab items may be used with any tool. Check each item's listing and the Epic Content License Agreement (https://www.unrealengine.com/eula/content) before moving an asset out of Unreal.
 - **CC-BY** items need credit. When one goes into a scene, record it in the project's credits list at once: the item's name, the creator, the licence and the link. Put the credits wherever the renders are shown.
 - Data: OpenStreetMap is ODbL ("© OpenStreetMap contributors" wherever it shows). Fonts: check each one's licence (OFL fonts are fine to render with).
 - Real places and brands in a scene: a recognisable logo on a building is someone's trademark; leave it out of commercial work unless cleared.

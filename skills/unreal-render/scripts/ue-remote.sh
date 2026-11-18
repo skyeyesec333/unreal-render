@@ -28,13 +28,20 @@ SSH=(ssh -o BatchMode=yes -o ConnectTimeout=10 -o ServerAliveInterval=30)
 PS="powershell -NoProfile -ExecutionPolicy Bypass -File $WORK/scripts/ue.ps1"
 
 rps() { "${SSH[@]}" -- "$HOST" "$PS $*" 2>&1 | clean; return "${PIPESTATUS[0]}"; }
+# Inline PowerShell sent as -EncodedCommand (UTF-16LE base64): Windows OpenSSH's default shell is cmd, which would read
+# PowerShell's | ; $ ' as its own; encoded, the text reaches PowerShell unchanged whichever shell the PC uses.
+renc() {
+  local b; b=$(printf '%s' "\$ProgressPreference='SilentlyContinue'; $1" | iconv -f UTF-8 -t UTF-16LE | base64 | tr -d '\n')
+  "${SSH[@]}" -- "$HOST" "powershell -NoProfile -NonInteractive -EncodedCommand $b" 2>&1 | clean; return "${PIPESTATUS[0]}"
+}
 need() { [ $# -ge 2 ] && [ -n "$2" ] || die "$1 needs a value"; }
 asset_ok() { [[ $1 =~ ^/Game(/[A-Za-z0-9_][A-Za-z0-9_.-]*)+$ ]] || die "not an asset path like /Game/Folder/Name: $1"; }
 
 cmd=${1:-}; [ -n "$cmd" ] || { sed -n '2,15p' "$0"; exit 2; }; shift
 case $cmd in
   setup)
-    "${SSH[@]}" -- "$HOST" "powershell -NoProfile -Command New-Item -ItemType Directory -Force -Path $WORK/scripts/ue,$WORK/args,$WORK/logs | Out-Null" 2>&1 | clean
+    renc "foreach (\$d in '$WORK/scripts/ue','$WORK/args','$WORK/logs') { New-Item -ItemType Directory -Force -Path \$d > \$null }; 'folders ready'" \
+      || die "could not create the work folders on the PC"
     scp -q -o BatchMode=yes "$HERE/ue.ps1" "$HERE/export_camera.py" "$SKILL/examples/city_from_layout.py" "$HOST:$WORK/scripts/"
     scp -q -o BatchMode=yes "$HERE"/ue/*.py "$HOST:$WORK/scripts/ue/"
     echo "copied ue.ps1, export_camera.py, city_from_layout.py and the helpers to $WORK/scripts"

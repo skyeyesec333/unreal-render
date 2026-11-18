@@ -4,7 +4,7 @@
 
 - **Materials on instanced or Nanite meshes need usage flags** (`used_with_instanced_static_meshes`, `used_with_nanite`). Without them the game renderer, which is what MRQ uses, silently swaps in the default material; the only sign is a "missing usage flag" line in the log. `materials.fresh()` sets both.
 - **New assets are not saved by saving the level.** Material instances, sequences and configs made by script must be saved themselves (`unreal.EditorAssetLibrary.save_loaded_asset`, or `ur.save_new_assets(<folder>)`). Otherwise the render loads defaults.
-- **Make new assets each build** (the helpers stamp names with the run time) and never overwrite; deleting old ones is the user's call. Hide old actors (`ur.hide`) instead of deleting them.
+- **Make new assets each build** (the helpers stamp names with the run time; materials go in a `Run_<stamp>` folder per build) and never overwrite; deleting old ones is the user's call. Hide old actors (`ur.hide`) instead of deleting them.
 
 ## Instances
 
@@ -27,7 +27,7 @@
 - **Move CesiumSunSky's globe anchor to the site.** It starts at latitude 0, longitude 0, so the sun is computed for the wrong place (a black sky at your afternoon).
 - **Aim with Cesium's own conversion** (`transform_longitude_latitude_height_position_to_unreal`) for the camera and its target: the local frame is East +X, South +Y, Up +Z, and guessed axes point the camera away.
 - **Google's 3D tiles have daylight baked in**: black at night, flat in low sun, and height-limited districts read as a carpet. Use them for a daytime far horizon; build the lit near city yourself.
-- **Licences**: Cesium ion's free tier is non-commercial; Google's tiles through your own key need billing.
+- **Licences**: see references/setup.md, section 5: Cesium ion's Community plan is personal and non-commercial; Google's Photorealistic 3D Tiles need on-screen attribution and restrict content and video made from them, so offline frames for a website may not be allowed at all.
 
 ## Running headless
 
@@ -36,4 +36,4 @@
 - One Unreal process at a time per PC: two fight over the project's files and the GPU.
 - First runs compile shaders for a long time (an hour or more on a big sample); later runs reuse the cache. Give the first render a generous `--timeout`.
 - A build over a large district is slow (tens of minutes); a 1080p frame of a dense city about a minute on an 8 GB card.
-- An SSH session's processes can die when it closes on Windows: for long jobs use `--detach` (Start-Process) and poll `status`; if a detached job still dies with the session, start it from a scheduled task.
+- **An SSH session's processes die when it closes on Windows.** `--detach` therefore hands the run to a one-off scheduled task that runs as the signed-in user (Interactive logon, no stored password), writes its output to `logs/ue-render-<stamp>.txt`, and is removed by the next call once finished (a task cannot delete itself while running). The user must be signed in at the PC; if not, `--detach` says so and removes the task. Poll with `status`.

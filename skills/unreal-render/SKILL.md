@@ -42,15 +42,15 @@ $S/ue-remote.sh render /Game/MyRenders/Maps/City_1118_093000 /Game/MyRenders/Seq
 $S/ue-remote.sh fetch Vista_1118_093000 ./renders/vista-01
 ```
 
-- **Write build scripts with the helpers** in `scripts/ue/` (`ur`, `materials`, `instances`, `shot`, `rig`, `cesium`); `examples/city_from_layout.py` is a complete one. Each build makes **new** assets stamped with the run time, under your own `/Game/MyRenders` folder, and a new render folder: nothing is overwritten, so any earlier frame can be reproduced.
-- **One Unreal job at a time** per PC: `ue.ps1` refuses to start a second. Long renders: `--detach`, then `status`.
+- **Write build scripts with the helpers** in `scripts/ue/` (`ur`, `materials`, `instances`, `shot`, `rig`, `cesium`); `examples/city_from_layout.py` is a complete one. Each build makes **new** assets stamped with the run time (level, sequence, config, and its materials in a `Run_<stamp>` folder), under your own `/Game/MyRenders` folder, and a new render folder: nothing an earlier build used is overwritten, so any earlier frame can be reproduced.
+- **One Unreal job at a time** per PC: `ue.ps1` refuses to start while a headless job runs or the editor is open (both hold the project's files). A timeout stops the job and its shader-compile children. Long runs: `--detach` (a one-off scheduled task that outlives the SSH session; the user must be signed in at the PC), then `status`.
 - A run fails when Unreal exits non-zero **or** the log has a Python error (`-run=pythonscript` often exits 0 after a traceback). Read the `ERR` lines and the report, fix, run again: a new run makes new assets.
 - Do a **one-frame test** (frames=1) before a long sequence: exposure and emissives are the usual misses.
 - Keep working files on the PC (renders, logs, the project). Fetch only what the site needs; never delete on the PC without asking.
 
 ## 4. The camera for the web
 
-`export_camera.py` with `{"sequence": "/Game/MyRenders/Seq/..."}` writes `<sequence>.camera.json` in the PC's `logs/`: per frame the position (metres), forward and up vectors and the vertical FOV, already in three.js's axes. `fetch-log` it, then in the page: `camera.position.set(...p); camera.up.set(...u); camera.lookAt(p + f); camera.fov = vfov`. Live 3D drawn over the frames then lines up with them.
+`export_camera.py` with `{"sequence": "/Game/MyRenders/Seq/..."}` writes `<sequence>.camera.json` in the PC's `logs/`: per frame the position (metres), forward and up vectors and the vertical FOV, already in three.js's axes. `fetch-log` it, then in the page: `camera.position.set(...p); camera.up.set(...u); camera.lookAt(new THREE.Vector3(...p).add(new THREE.Vector3(...f))); camera.fov = vfov; camera.updateProjectionMatrix()`, one entry per rendered frame (frame `start + i`). Live 3D drawn over the frames then lines up with them.
 
 ## Traps
 

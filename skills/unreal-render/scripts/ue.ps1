@@ -17,10 +17,12 @@ param(
   [ValidateSet("check", "script", "render", "status", "renders")][string]$Mode = "check",
   [string]$Script = "", [string]$ArgsFile = "",
   [string]$Map = "", [string]$Sequence = "", [string]$Config = "",
-  [int]$ResX = 1920, [int]$ResY = 1080, [int]$TimeoutMin = 0, [switch]$Detach
+  [int]$ResX = 1920, [int]$ResY = 1080, [int]$TimeoutMin = 0, [switch]$Detach, [string]$TaskName = ""
 )
 $ErrorActionPreference = "Stop"
+$ProgressPreference = "SilentlyContinue"
 function Fail($msg) { Write-Output "FAIL  $msg"; exit 2 }
+if ($TaskName -and $TaskName -notmatch '^ue-render-\d{4}_\d{6}$') { Fail "bad task name" }
 
 $Work = Split-Path -Parent $PSScriptRoot
 $Lib = Join-Path $PSScriptRoot "ue"
@@ -40,8 +42,9 @@ $AssetRe = '^/Game(/[A-Za-z0-9_][A-Za-z0-9_.\-]*)+$'
 function Report-Run($proc, $log, $report, $timeoutMin) {
   if ($timeoutMin -gt 0) {
     if (-not $proc.WaitForExit($timeoutMin * 60 * 1000)) {
-      Stop-Process -Id $proc.Id -Force
-      Write-Output "FAIL  timed out after $timeoutMin min; stopped (log: $log)"; exit 3
+      # the whole tree: UnrealEditor-Cmd starts ShaderCompileWorker children that Stop-Process would leave running
+      & taskkill.exe /T /F /PID $proc.Id 2>&1 | Out-Null
+      Write-Output "FAIL  timed out after $timeoutMin min; stopped it and its child processes (log: $log)"; exit 3
     }
   } else { $proc.WaitForExit() }
   $code = $proc.ExitCode
@@ -52,6 +55,45 @@ function Report-Run($proc, $log, $report, $timeoutMin) {
   Write-Output "OK    exit 0 (log: $log)"
 }
 
+# One Unreal at a time: a headless job, or the editor open on the project, both hold the project's files.
+function Assert-Free {
+  $busy = @(Get-Process UnrealEditor-Cmd, UnrealEditor -ErrorAction SilentlyContinue)
+  if ($busy.Count) { Fail ("Unreal is already running here ({0}): wait for the job (Mode status), or close the editor" -f (($busy | ForEach-Object { $_.ProcessName }) -join ", ")) }
+}
+
+# -Detach: processes started inside an SSH session end with it, so a long run is handed to a one-off scheduled task
+# that runs this same script (without -Detach) as the signed-in user and writes its output to <logs>\<task>.txt;
+# the next call to this script removes the finished task. The user must be signed in at the PC (Interactive logon); no password is stored.
+function Start-Detached([string[]]$passArgs) {
+  $name = "ue-render-$Stamp"
+  $out = Join-Path $Logs "$name.txt"
+  $argLine = "-NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$PSCommandPath`" " + ($passArgs -join " ") + " -TaskName $name"
+  $act = New-ScheduledTaskAction -Execute "powershell.exe" -Argument $argLine -WorkingDirectory $Work
+  $who = [Security.Principal.WindowsIdentity]::GetCurrent().Name
+  $pr = New-ScheduledTaskPrincipal -UserId $who -LogonType Interactive -RunLevel Limited
+  $set = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Hours 24)
+  Register-ScheduledTask -TaskName $name -Action $act -Principal $pr -Settings $set | Out-Null
+  Start-ScheduledTask -TaskName $name
+  Start-Sleep -Seconds 4
+  $t = Get-ScheduledTask -TaskName $name -ErrorAction SilentlyContinue
+  if ($t -and $t.State -ne "Running" -and -not (Test-Path -LiteralPath $out)) {
+    $res = ($t | Get-ScheduledTaskInfo).LastTaskResult
+    Unregister-ScheduledTask -TaskName $name -Confirm:$false
+    Fail "the detached run did not start (task result $res). Is $who signed in at the PC? Run without --detach, or sign in."
+  }
+  Write-Output "STARTED task $name as $who; its output goes to $out (Mode status shows progress)"
+  exit 0
+}
+
+# A task cannot remove itself while it runs, so finished one-off tasks from earlier detached runs are removed here,
+# from outside, by the next call. Only this script's own tasks match (ue-render-MMdd_HHmmss).
+if (-not $TaskName) {
+  Get-ScheduledTask -TaskName "ue-render-*" -ErrorAction SilentlyContinue |
+    Where-Object { $_.TaskName -match '^ue-render-\d{4}_\d{6}$' -and $_.State -ne "Running" } |
+    ForEach-Object { Unregister-ScheduledTask -TaskName $_.TaskName -Confirm:$false -ErrorAction SilentlyContinue }
+}
+if ($TaskName) { Start-Transcript -LiteralPath (Join-Path $Logs "$TaskName.txt") | Out-Null }
+try {
 switch ($Mode) {
   "check" {
     # read-only: what this PC has for Unreal work
@@ -88,7 +130,12 @@ switch ($Mode) {
       if (-not (Test-Path -LiteralPath $full)) { Fail "no such argument file: $full" }
       $ap = $full
     }
-    if (@(Get-Process UnrealEditor-Cmd -ErrorAction SilentlyContinue).Count) { Fail "Unreal is already running a job here: wait for it (Mode status)" }
+    Assert-Free
+    if ($Detach) {
+      $pass = @("-Mode", "script", "-Script", $Script, "-TimeoutMin", $TimeoutMin)
+      if ($ap) { $pass += @("-ArgsFile", "`"$ap`"") }
+      Start-Detached $pass
+    }
     $name = [System.IO.Path]::GetFileNameWithoutExtension($Script)
     $log = Join-Path $Logs "$Stamp-$name.log"; $report = Join-Path $Logs "$Stamp-$name.report.txt"
     # the script finds the helpers, its arguments and where to write its report through these
@@ -96,7 +143,6 @@ switch ($Mode) {
     $argv = @("`"$Project`"", "-run=pythonscript", "`"-script=$sp`"", "-unattended", "-nosplash", "-nullrhi", "-stdout", "-FullStdOutLogOutput")
     $p = Start-Process -FilePath $Cmd -ArgumentList $argv -RedirectStandardOutput $log -RedirectStandardError "$log.err" -WindowStyle Hidden -PassThru
     $p.Id | Set-Content -LiteralPath (Join-Path $Logs "current.pid")
-    if ($Detach) { Write-Output "STARTED pid $($p.Id), log $log, report $report"; exit 0 }
     Report-Run $p $log $report $TimeoutMin
   }
 
@@ -105,7 +151,8 @@ switch ($Mode) {
       if ($pair[1] -notmatch $AssetRe) { Fail ("{0} must be an asset path like /Game/Folder/Name (got '{1}')" -f $pair[0], $pair[1]) }
     }
     if ($ResX -lt 64 -or $ResX -gt 8192 -or $ResY -lt 64 -or $ResY -gt 8192) { Fail "resolution out of range" }
-    if (@(Get-Process UnrealEditor-Cmd -ErrorAction SilentlyContinue).Count) { Fail "Unreal is already running a job here: wait for it (Mode status)" }
+    Assert-Free
+    if ($Detach) { Start-Detached @("-Mode", "render", "-Map", $Map, "-Sequence", $Sequence, "-Config", $Config, "-ResX", $ResX, "-ResY", $ResY, "-TimeoutMin", $TimeoutMin) }
     New-Item -ItemType Directory -Force -Path $Renders | Out-Null
     $leaf = ($Sequence -split "/")[-1] -replace '\..*$', ''
     $log = Join-Path $Logs "$Stamp-render-$leaf.log"; $report = Join-Path $Logs "$Stamp-render-$leaf.report.txt"
@@ -113,7 +160,6 @@ switch ($Mode) {
               "-windowed", "-resx=$ResX", "-resy=$ResY", "-unattended", "-nosplash", "-NoLoadingScreen", "-log", "-stdout", "-FullStdOutLogOutput")
     $p = Start-Process -FilePath $Cmd -ArgumentList $argv -RedirectStandardOutput $log -RedirectStandardError "$log.err" -WindowStyle Hidden -PassThru
     $p.Id | Set-Content -LiteralPath (Join-Path $Logs "current.pid")
-    if ($Detach) { Write-Output "STARTED pid $($p.Id), log $log"; exit 0 }
     Report-Run $p $log $report $TimeoutMin
   }
 
@@ -123,9 +169,14 @@ switch ($Mode) {
     $procs = @(Get-Process UnrealEditor-Cmd -ErrorAction SilentlyContinue)
     if ($procs.Count) { $procs | ForEach-Object { Write-Output ("RUNNING pid {0}, started {1}, {2:N0} MB" -f $_.Id, $_.StartTime, ($_.WorkingSet64 / 1MB)) } }
     else { Write-Output "IDLE  no Unreal job running" }
+    Get-ScheduledTask -TaskName "ue-render-*" -ErrorAction SilentlyContinue | ForEach-Object { Write-Output ("TASK  {0} {1}" -f $_.TaskName, $_.State) }
     $last = Get-ChildItem -LiteralPath $Logs -Filter "*.log" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime | Select-Object -Last 1
     if ($last) { Write-Output "log   $($last.FullName)"; Get-Content -LiteralPath $last.FullName -Tail 12 | ForEach-Object { "      $_" } }
     $rep = Get-ChildItem -LiteralPath $Logs -Filter "*.report.txt" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime | Select-Object -Last 1
     if ($rep) { Write-Output "report $($rep.FullName)"; Get-Content -LiteralPath $rep.FullName | ForEach-Object { "      $_" } }
   }
+}
+} finally {
+  # a detached run closes its transcript however it ends; the next call removes its finished task
+  if ($TaskName) { Stop-Transcript | Out-Null }
 }

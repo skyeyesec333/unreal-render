@@ -1,6 +1,6 @@
 """Materials made by script, with the flags that keep them from silently turning into the default material.
 
-    m = materials.fresh("M_Neon")                     # <ROOT>/Materials/M_Neon, usage flags set
+    m = materials.fresh("M_Neon")                     # <ROOT>/Materials/Run_<stamp>/M_Neon, usage flags set
     col = materials.vector(m, "Color", (0.3, 0.8, 1.0), -600, 0)
     k = materials.scalar(m, "Strength", 18000.0, -600, 120)
     ...
@@ -24,10 +24,17 @@ lib = unreal.EditorAssetLibrary
 USAGE = ("used_with_instanced_static_meshes", "used_with_nanite")
 
 
+def run_folder(sub):
+    """<ROOT>/<sub>/Run_<run stamp>: each build's materials go in a folder of their own, so rebuilding them never
+    changes how an earlier build's level looks (its level keeps pointing at that run's materials)."""
+    return "%s/Run_%s" % (ur.folder(sub), ur.RUN)
+
+
 def fresh(name, sub="Materials"):
-    """a material with no expressions: made, or emptied if it exists (materials are code, rebuilt each run)"""
+    """a material with no expressions, in this run's folder (materials are code, built again each run;
+    emptied first only if this same run already made one of that name)"""
     ur.name(name)  # validates the characters
-    base = ur.folder(sub)
+    base = run_folder(sub)
     path = "%s/%s" % (base, name)
     if lib.does_asset_exist(path):
         m = lib.load_asset(path)
@@ -89,9 +96,9 @@ def emissive(name, rgb, strength):
 
 
 def instance(parent, name, scalars=None, vectors=None, sub="Materials"):
-    """a material instance with parameters set, saved"""
+    """a material instance with parameters set, saved, in this run's folder"""
     ur.name(name)
-    base = ur.folder(sub)
+    base = run_folder(sub)
     path = "%s/%s" % (base, name)
     mi = lib.load_asset(path) if lib.does_asset_exist(path) else tools.create_asset(
         name, base, unreal.MaterialInstanceConstant, unreal.MaterialInstanceConstantFactoryNew())

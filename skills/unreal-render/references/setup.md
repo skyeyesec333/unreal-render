@@ -11,13 +11,14 @@ Without that skill, the Windows essentials (PowerShell as Administrator, by the 
 ```powershell
 Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
 Start-Service sshd; Set-Service sshd -StartupType Automatic
-# your public key: a standard user puts it in C:\Users\<user>\.ssh\authorized_keys;
+# your public key: a standard user puts it in C:\Users\<user>\.ssh\authorized_keys (recommended: run Unreal jobs as a
+# standard, non-administrator account, so a script gone wrong cannot change the system);
 # an administrator account must use this file instead, owned by Administrators and SYSTEM only:
 Add-Content C:\ProgramData\ssh\administrators_authorized_keys '<the .pub line>'
 icacls C:\ProgramData\ssh\administrators_authorized_keys /inheritance:r /grant "*S-1-5-32-544:F" /grant "*S-1-5-18:F"
 ```
 
-The SIDs (`*S-1-5-32-544` Administrators, `*S-1-5-18` SYSTEM) work on any Windows language. The default SSH shell is `cmd`; `ue-remote.sh` calls `powershell` explicitly, so either works. Check: `ssh -o BatchMode=yes <pc> "echo ok"` prints `ok` with no password prompt.
+The SIDs (`*S-1-5-32-544` Administrators, `*S-1-5-18` SYSTEM) work on any Windows language. The default SSH shell is `cmd`; `ue-remote.sh` always calls `powershell` itself (inline PowerShell goes as `-EncodedCommand`, so cmd never reads it), so either default works. Check: `ssh -o BatchMode=yes <pc> "echo ok"` prints `ok` with no password prompt.
 
 **Keep it awake** while it renders (Settings → System → Power: never sleep when plugged in), or a sleeping PC drops the job.
 
@@ -71,5 +72,7 @@ Then put `ue.json` in the work folder (the owner can write it, or copy one over 
 
 - The owner installs **Cesium for Unreal** from Fab into the engine and enables it in the project.
 - A **Cesium ion** account gives an access token. Keep it in a file on the PC **outside every repository** (e.g. `C:/Users/<you>/keys/cesium-ion.txt`) and pass that path in the build's arguments; `ue/cesium.py` reads it. The token is stored inside the saved level, so never share that project.
-- **Licences:** Cesium ion's free tier is for non-commercial use; frames for a commercial site need a paid plan. Google's Photorealistic 3D Tiles used through your own Google Cloud key need a billing account on that project (the key returns errors until billing is linked).
+- **Licences and terms (checked when this was written; read the current pages before relying on them):**
+  - **Cesium ion's Community (free) plan** is for personal and non-commercial use (exploratory evaluation and unfunded education are allowed). A company with more than $50K in annual gross revenue or more than $50K raised needs a paid plan (Commercial, from $149/month for an individual), as do government and funded-research projects. It includes 1,000 Google Photorealistic 3D Tiles root tiles a month. https://cesium.com/platform/cesium-ion/pricing/
+  - **Google Photorealistic 3D Tiles** (through Cesium ion or your own Google Cloud key, which needs billing linked) require attribution wherever they are shown: the Google Maps logo, not obscured, and the tiles' data credits aggregated on one line (Cesium: show credits on screen). Google's policies also say not to create content based on Google Maps Content, allow promotional videos of at most 30 seconds marked "for promotional purposes only", and list offline uses among prohibited ones. **Offline frames of the tiles shown on a website may therefore not be allowed at all**: that is the user's call, after reading https://developers.google.com/maps/documentation/tile/policies. Building the scene from your own and Fab geometry avoids the question.
 - Google's tiles are photographs with the daylight baked in: they suit daytime far horizons; at night they render black and a lit city has to come from your own geometry.
