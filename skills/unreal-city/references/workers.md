@@ -19,6 +19,8 @@ Start with one. unreal-render's `references/setup.md` covers a Windows PC from n
 
 A render that fits a graphics card can still take a machine down by its **system RAM**. In the worked case a test level whose frames used 5.7 GB of GPU memory needed **20.9 GiB of RAM** to load, because it lives in a 96 GB sample project; on a shared box with an 8 GiB rule for guests and swap already in use, the machine stopped answering for several minutes and the job died with no frames. GPU memory had been requested carefully. RAM had not been measured at all.
 
+Resident memory understated it, too: when the kernel killed the job it held 18.75 GiB resident **plus 22.95 GiB swapped out**, about 41.7 GiB in all. A machine in swap hides a job's real size, so `measure_job.py` counts swapped memory on Linux, and a measurement taken on a box that was swapping is a floor, not a figure. The box's administrator set the rule that followed: 8 GiB per guest job including children and file cache, no swap allowance, at least 12 GiB available before launch, one guarded job at a time, and a GPU grant does not buy system RAM. This project's renders stay on a machine with the memory for them.
+
 So before any job goes to a machine that is not yours alone:
 
 1. **Measure the smallest real job** (one frame of the test level) on a machine you own, with `scripts/measure_job.py` (Linux, macOS) or `scripts/measure_job.ps1` (Windows) wrapped round the render command. It adds up the memory of the job and everything it starts (shader workers too), reads the GPU, and writes `budget.json`: peak RAM and in which phase, peak GPU memory, how many processes ran at once, and what to ask for (the peak plus 15%).

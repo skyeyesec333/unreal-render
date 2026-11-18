@@ -7,7 +7,8 @@ Run it ON THE WORKER, around the smallest real job (one frame of a test level, n
   python3 measure_job.py --label lm-test --ram-cap 22 --out budget.json -- <command ...>     # kill the job's whole tree at 22 GiB
   python3 measure_job.py --mark "Movie Pipeline" --log Saved/Logs/Project.log ...            # name a phase when this text appears in a log
 
-Every few seconds it adds up the memory of the command and everything it started (shader workers included), reads the
+Every few seconds it adds up the memory of the command and everything it started (shader workers included; on Linux
+resident memory plus what the job has swapped out), reads the
 GPU (nvidia-smi, if there is one), and the machine's load. It writes the samples as CSV beside the output and a summary:
 peak RAM and when, peak GPU memory, peak per phase, and a suggested allowance (peak plus 15%, rounded up).
 
@@ -32,7 +33,13 @@ def tree(root):
         p = todo.pop()
         if p in seen: continue
         seen.append(p); todo += kids.get(p, [])
-    return seen, sum(rss.get(p, 0) for p in seen)
+    swap = 0                                             # Linux: what the job has pushed out to swap counts too (resident memory alone hid half of one job's real size)
+    for p in seen:
+        try:
+            for line in open("/proc/%d/status" % p):
+                if line.startswith("VmSwap:"): swap += int(line.split()[1]); break
+        except (OSError, ValueError): pass
+    return seen, sum(rss.get(p, 0) for p in seen) + swap
 
 def gpu(pids):
     """(MiB used by these pids, MiB used on the whole first GPU) or (None, None) without nvidia-smi"""
