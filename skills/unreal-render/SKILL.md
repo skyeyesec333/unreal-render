@@ -16,7 +16,7 @@ A pipeline that builds levels by Python script on a Windows PC with an NVIDIA ca
 5. fetch     ue-remote.sh fetch <render-folder> ./renders/<name>   (copy only)
 ```
 
-`scripts/` below is the `scripts/` folder **in this skill's own directory** (as a plugin: `${CLAUDE_PLUGIN_ROOT}/skills/unreal-render/scripts/`), and `examples/` likewise. Run them by full path. On the PC everything lives in one work folder (`UR_WORK`): `scripts/` (ue.ps1, helpers in `scripts/ue/`, your build scripts), `args/`, `logs/`, and `ue.json`.
+`scripts/` below is the `scripts/` folder **in this skill's own directory** (`${CLAUDE_SKILL_DIR}/scripts/`, for a plugin or a copied skill alike), and `examples/` likewise. Run them by full path. On the PC everything lives in one work folder (`UR_WORK`): `scripts/` (ue.ps1, helpers in `scripts/ue/`, your build scripts), `args/`, `logs/`, and `ue.json`.
 
 ## 0. First-time setup
 
