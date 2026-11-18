@@ -1,0 +1,8 @@
+__pycache__/
+.DS_Store
+*.blend1
+Saved/
+renders/
+*.uasset
+*.umap
+args.local.json

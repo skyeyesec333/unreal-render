@@ -1,0 +1,22 @@
+{
+  "name": "unreal-render",
+  "description": "Headless Unreal Engine builds and Movie Render Queue renders on a Windows GPU PC.",
+  "owner": {
+    "name": "skyeyesec333"
+  },
+  "plugins": [
+    {
+      "name": "unreal-render",
+      "source": "./",
+      "description": "Skill: unreal-render. First-time setup of a Windows GPU PC, Python-scripted levels, Fab and sample content, Cesium, Movie Render Queue offscreen, camera export for three.js.",
+      "category": "development",
+      "tags": [
+        "unreal-engine",
+        "rendering",
+        "movie-render-queue",
+        "ssh"
+      ],
+      "version": "0.1.0"
+    }
+  ]
+}

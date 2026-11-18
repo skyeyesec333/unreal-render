@@ -1,0 +1,21 @@
+{
+  "name": "unreal-render",
+  "displayName": "Unreal Render",
+  "version": "0.1.0",
+  "description": "Build and render Unreal Engine 5 scenes headless on a Windows GPU PC over SSH: Python-scripted levels, Fab and sample content, Cesium tiles, Movie Render Queue frames and a camera track for the web.",
+  "author": {
+    "name": "skyeyesec333"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/skyeyesec333/unreal-render",
+  "homepage": "https://github.com/skyeyesec333/unreal-render",
+  "keywords": [
+    "unreal-engine",
+    "movie-render-queue",
+    "headless",
+    "fab",
+    "cesium",
+    "openstreetmap",
+    "threejs"
+  ]
+}

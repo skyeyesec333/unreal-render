@@ -1,0 +1,8 @@
+/* Buildings and streets in a box, with geometry, for osm_layout.py.
+   Replace the box: (south, west, north, east) in degrees. Keep it to a couple of km. */
+[out:json][timeout:120];
+(
+  way["building"](SOUTH,WEST,NORTH,EAST);
+  way["highway"~"^(motorway|trunk|primary|secondary|tertiary|residential|unclassified|service)$"](SOUTH,WEST,NORTH,EAST);
+);
+out geom;
