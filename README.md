@@ -4,6 +4,11 @@ Builds and renders Unreal Engine 5 scenes on a Windows gaming PC from your own c
 
 It came out of building a lit night city on about 11,000 real building footprints, rendered at about a minute per 1080p frame on an 8 GB card.
 
+## Two skills
+
+- **unreal-render**: the runner. Sets the PC up, runs build scripts, renders, fetches frames and the camera.
+- **unreal-city**: the method for a real city on top of it, from step 1: workers, helper agents (fetch sources, survey, build, review), OpenStreetMap layout, a sample project's buildings on real footprints, hand-built landmarks, night lighting with window, water and surface shaders, and a review loop that holds every frame against real photographs. It comes with troubleshooting tables and the list of sources the worked city used. See [skills/unreal-city](skills/unreal-city/SKILL.md).
+
 ## Good for
 
 - Photoreal city or landscape backdrops for a website, rendered on a separate PC
@@ -24,7 +29,7 @@ Or copy the skill into your own skills folder:
 
 ```sh
 git clone https://github.com/skyeyesec333/unreal-render
-cp -r unreal-render/skills/unreal-render ~/.claude/skills/
+cp -r unreal-render/skills/unreal-render unreal-render/skills/unreal-city ~/.claude/skills/
 ```
 
 You can also copy it into one project's `.claude/skills/` folder instead.
@@ -35,6 +40,8 @@ You can also copy it into one project's `.claude/skills/` folder instead.
 - "Build a night city from this OpenStreetMap area and render a test frame"
 - "Render the latest sequence at 1920x1080 and bring the frames back"
 - "Export the camera from that shot for the site"
+- "Build my city's riverside at night from the map and review it against real photos"
+- "My towers look like galaxies and the water is dead: what is wrong?"
 
 ## You'll need
 

@@ -8,15 +8,17 @@
     {
       "name": "unreal-render",
       "source": "./",
-      "description": "Skill: unreal-render. First-time setup of a Windows GPU PC, Python-scripted levels, Fab and sample content, Cesium, Movie Render Queue offscreen, camera export for three.js.",
+      "description": "Skills: unreal-render (first-time setup of a Windows GPU PC, Python-scripted levels, Fab and sample content, Cesium, Movie Render Queue offscreen, camera export for three.js) and unreal-city (a real city from OpenStreetMap on a sample project's buildings, night lighting and shaders, helper agents, a review loop against photographs, troubleshooting, sources).",
       "category": "development",
       "tags": [
         "unreal-engine",
         "rendering",
         "movie-render-queue",
-        "ssh"
+        "ssh",
+        "city",
+        "openstreetmap"
       ],
-      "version": "0.1.0"
+      "version": "0.2.0"
     }
   ]
 }
