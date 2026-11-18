@@ -1,7 +1,7 @@
 {
   "name": "unreal-render",
   "displayName": "Unreal Render",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Two skills. unreal-render: build and render Unreal Engine 5 scenes headless on a Windows GPU PC over SSH (Python-scripted levels, Fab and sample content, Cesium tiles, Movie Render Queue frames, a camera track for the web). unreal-city: build a real city by script from OpenStreetMap and a sample project's buildings, light it for night, and review every frame against real photographs.",
   "author": {
     "name": "skyeyesec333"

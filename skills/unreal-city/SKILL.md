@@ -31,6 +31,7 @@ Follow **unreal-render**'s first-time setup for the PC (the owner installs the e
 - **A free sample project is the building kit.** Epic's City Sample (about 96 GB, free on Fab) holds some 600 buildings made of modular wall pieces with lit windows. Build in a copy of that project, with your own work in your own content folders; rename nothing of Epic's.
 - **Disk first.** Engine about 60 GB, the sample about 100 GB, plus renders. Put the project on a second drive.
 - **A second worker must match the first exactly**: same engine version to the patch (a project saved in 5.x.4 will not open in 5.x.2), verified install, the project's C++ compiled for that OS. See [references/workers.md](references/workers.md) before copying 90 GB anywhere.
+- **Measure before you borrow.** A render that fits the GPU can still need 20 GiB of system RAM. Run one frame under `scripts/measure_job.py`, then `scripts/fit_check.py` against a shared box's rules, before requesting anything there ([references/workers.md](references/workers.md)).
 - **Network is the hidden cost.** On Wi-Fi a build that re-sends 90 MB of meshes each time loses minutes per build. Send only what changed (`scripts/sync_changed.sh`).
 
 ## 2. Agents
@@ -99,5 +100,6 @@ A review loop optimises what it measures: judged only against photographs, a sce
 - `scripts/project_points.py`: where named world points fall in a camera's frame; which mapped buildings a camera should see.
 - `scripts/queue_after.sh`: start a build when another finishes, without the self-matching wait loop.
 - `scripts/sync_changed.sh`: send a worker only the files that changed.
+- `scripts/measure_job.py` (and `.ps1` for Windows): peak RAM, GPU memory and process count of a job and everything it starts, with an optional RAM cap; `scripts/fit_check.py`: does that budget fit a shared machine's rules.
 - `scripts/ue/probe_uv.py`: what a mesh really stored for its texture coordinates (run in Unreal).
 - `references/agents.md`, `pipeline.md`, `materials.md`, `qa.md`, `troubleshooting.md`, `workers.md`, `sources.md`.

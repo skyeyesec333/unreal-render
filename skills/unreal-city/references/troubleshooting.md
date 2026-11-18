@@ -62,6 +62,7 @@ Every row cost at least one build. unreal-render's `references/traps.md` has the
 | PowerShell one-liners over SSH lose `$_` | Quoting through two shells | Copy the log to your machine and search it there; or `-EncodedCommand` |
 | A pattern with `\|` matches nothing | Basic versus extended regular expressions differ by tool | Test the pattern alone first |
 | Two fixes "confirmed by the log" changed nothing | A log line saying a setting was set proves nothing | Read the result back from the asset |
+| A shared machine stops answering during a render; the job dies with no frames | System RAM, not GPU memory: loading a level from a large sample project took 21 GiB on a 29 GiB box already in swap | Measure RAM first (`scripts/measure_job.py`), check the fit (`scripts/fit_check.py`), run under a RAM cap |
 | A second machine refuses to compile the project | Stale `Intermediate` from a broken install; clang treats unreachable-code warnings as errors | See workers.md |
 
 ## When the picture is wrong and you do not know why

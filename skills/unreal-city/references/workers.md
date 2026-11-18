@@ -15,6 +15,28 @@ Start with one. unreal-render's `references/setup.md` covers a Windows PC from n
 - **Send only what changed.** A wrapper that re-sent 90 MB of meshes before every build cost minutes each time. `scripts/sync_changed.sh` keeps a list of sizes and times of what it last sent.
 - Keep renders, caches and the project on the worker. Fetch frames; leave the rest.
 
+## Calibrate before you borrow: RAM, GPU memory and CPU, measured
+
+A render that fits a graphics card can still take a machine down by its **system RAM**. In the worked case a test level whose frames used 5.7 GB of GPU memory needed **20.9 GiB of RAM** to load, because it lives in a 96 GB sample project; on a shared box with an 8 GiB rule for guests and swap already in use, the machine stopped answering for several minutes and the job died with no frames. GPU memory had been requested carefully. RAM had not been measured at all.
+
+So before any job goes to a machine that is not yours alone:
+
+1. **Measure the smallest real job** (one frame of the test level) on a machine you own, with `scripts/measure_job.py` (Linux, macOS) or `scripts/measure_job.ps1` (Windows) wrapped round the render command. It adds up the memory of the job and everything it starts (shader workers too), reads the GPU, and writes `budget.json`: peak RAM and in which phase, peak GPU memory, how many processes ran at once, and what to ask for (the peak plus 15%).
+   ```sh
+   python3 measure_job.py --label lm-test --log Saved/Logs/Project.log --mark "Movie Pipeline" --out budget.json -- <render command>
+   ```
+2. **Measure twice.** The first run on a machine compiles shaders (CPU and RAM heavy, one worker per core unless told otherwise); the second is the steady figure. Keep both.
+3. **Check the fit** against the box's own rules before requesting anything:
+   ```sh
+   python3 fit_check.py budget.json --ram-limit 8 --gpu-free 10016 --gpu-margin 512 --threads-limit 4
+   ```
+   It exits non-zero and says what to ask the owner for when the job does not fit. **If it does not fit, do not run it there**: take the numbers to the owner.
+4. **Read a broker's arithmetic.** One box granted only if free GPU memory was at least the request plus a fixed margin; a request with comfortable headroom was refused by 8 MiB and paused a service for nothing. Ask for the measured figure.
+5. **Run under a hard cap anyway.** On a shared box wrap the job in `measure_job.py --ram-cap <GiB>`: if it passes the cap its whole process tree is stopped and the box stays up. Better still, ask the box's owner for a memory-limited cgroup for guest jobs.
+6. **Every resource has its own rule.** GPU memory, system RAM, CPU threads and priority, time, disk. A broker usually enforces only the first. Check a new kind of job against each: the same run also started eight shader workers on a box whose rule was four threads.
+
+Measured on the worked project (Unreal 5.8, City Sample, 1080p, Lumen with hardware ray tracing): a full-city render peaked at **7.7 GB of GPU memory**; a landmark-only level at 5.7 GB of GPU memory and **about 21 GiB of RAM**. Your own numbers will differ: that is the point of measuring.
+
 ## A second worker
 
 It is worth having for parallel test levels, path-traced reference frames and long sequences. It roughly halves the wait only when the two can run different jobs; the builds themselves are single-machine.
