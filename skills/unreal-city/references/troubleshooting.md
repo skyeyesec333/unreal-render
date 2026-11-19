@@ -46,6 +46,7 @@ Every row cost at least one build. unreal-render's `references/traps.md` has the
 | Lamps light nothing | Emissives as small as a lamp head are culled from global illumination | Real lights near the shot, or light pools in the ground material |
 | Lamps flare into fog cones | Volumetric scattering on hundreds of small lights; inverse-square fall-off with a long reach | No fog scattering on them; a bounded fall-off |
 | Star spikes on near lamps, nothing on far ones | Convolution bloom's stock kernel | Standard bloom above white, wide |
+| A white mist over the water near lamps, from a low camera, that fog settings do not touch | Bloom: each lamp's highlight on a near-mirror water is hundreds of times over white, and a wide bloom spreads it into a cloud. A sharper light source makes it worse (more energy over the threshold) | Lower the lights' specular scale on the water side, a source of about a metre; leave the bloom for the lamps themselves. Test with bloom at 0 to be sure |
 | Near-white pixels far below the photographs however bright the sources | Usually the reflections, not the sources or the curve | Map where the photograph's white pixels are first |
 | Blue sparkle on near water | Steeper small waves with no specular anti-aliasing | Roughness from normal variance; drop waves under two pixels |
 | Reflections as round blobs on a lattice | Two or three ripple layers sharing periods | One spectrum of many unrelated waves |
@@ -69,6 +70,7 @@ Every row cost at least one build. unreal-render's `references/traps.md` has the
 
 1. Does the fault have a place in the frame? Project the geometry there (`scripts/project_points.py`) and list what is under it.
 2. Can the suspect be switched off for one run in a small test level?
+   - A glow that stands in front of things farther away than its cause is in the picture, not the scene: switch the post-process (bloom, then the grade) off before touching lights or fog.
 3. What does the reference do? Measure the photograph, not your memory of it.
 4. Was the last "fix" verified by reading something back?
 5. After two failed fixes, stop and get a second opinion (a researcher or reviewer agent, a stronger model) before a third.
