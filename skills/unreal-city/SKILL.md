@@ -77,6 +77,8 @@ Read [references/materials.md](references/materials.md): the shaders, with code.
 
 Read [references/qa.md](references/qa.md). Each build: render the shot **and** the test cameras; measure (`scripts/frame_stats.py`); send frames and photographs to the frame reviewer; fix its ranked list; journal what was done and what the frame showed. When a fault has a place in the frame, **project the geometry into the frame** (`scripts/project_points.py`) before guessing. When a fix does not move a fault, **switch the suspect off** before guessing again. When a number does not respond to its obvious control over three tries, ask what sits between the control and the measurement.
 
+**Before the second round, audit what a round costs** and cut every step whose inputs did not change: render only the cameras a fix touches, skip the stylised layer's twin when it did not change, build once for both layers (qa.md, "Time per round"). In the worked project this was found twenty rounds late and cost about six hours.
+
 Then [references/troubleshooting.md](references/troubleshooting.md): symptoms, causes and fixes, including the engine's silent failures when run headless.
 
 ## 10. A stylised layer
