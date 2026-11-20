@@ -65,6 +65,7 @@ Every row cost at least one build. unreal-render's `references/traps.md` has the
 | Two fixes "confirmed by the log" changed nothing | A log line saying a setting was set proves nothing | Read the result back from the asset |
 | A shared machine stops answering during a render; the job dies with no frames | System RAM, not GPU memory: loading a level from a large sample project took 21 GiB on a 29 GiB box already in swap | Measure RAM first (`scripts/measure_job.py`), check the fit (`scripts/fit_check.py`), run under a RAM cap |
 | A second machine refuses to compile the project | Stale `Intermediate` from a broken install; clang treats unreachable-code warnings as errors | See workers.md |
+| Water stays dark under a bright bank; highlights in the frame far below a photograph's; a "screen" or sign shows the same content in some cameras and different in others | The engine's reflections cannot draw a lamp's column (materials.md, section 3). Separately: cameras cut on one sequence sit seconds apart, so a time-driven material lands in a different moment per still. | Water-only tube lights at each source (materials.md, "Reflection columns"). For stills, give time-driven materials a parameter that holds one moment. |
 
 ## When the picture is wrong and you do not know why
 

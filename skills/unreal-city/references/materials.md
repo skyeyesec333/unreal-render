@@ -65,7 +65,7 @@ Any term that falls off with height reads height from the wall's v coordinate. O
 exp(-max(UV.y, 0.0) / SpillH)      // every fall-off with height, always
 ```
 
-## 3. Water (shape settled; reflection brightness not solved when written)
+## 3. Water (shape settled; reflection brightness solved with water-only lights, below)
 
 A mirror with a slow swell returns sharp broken copies of the far bank. Two layers of ripple show as round blobs on a visible lattice. What works is **one spectrum of many waves with unrelated periods**, small ones dropped where they fall under two pixels, and those running toward or away from the camera weighted up (that is what draws a light into a column):
 
@@ -85,6 +85,19 @@ return normalize(float3(n2 * Ripple * patch, 1.0));               // patch: slow
 ```
 
 Base colour near white-grey with metallic 1 (a mirror reflecting about 70% head-on), roughness low near the camera rising a little with distance. Make sure the far bank is **in the ray-traced scene** at all (troubleshooting.md): otherwise the water reflects only what is on screen.
+
+### Reflection columns: lights that only the water sees
+
+In a night photograph most of the clipped pixels are in the water: each lamp and lit front drawn out into a broken column. The engine's reflections will not give you this. A lamp head is too small for them, and a lit wall's image is spread thin by the ripples. Raising emissives turns walls into lightboxes before the water moves. A strong specular highlight on the lamps' own point lights does make glints, but from a pinpoint source each glint is hundreds of times over white, and the bloom turns the lot into mist over the water.
+
+What works: **a highlight's brightness is the light's strength divided by the size of its source, and a column is the mirror image of something tall.** So stand a point light with a **tube source** (`source_length` runs along the light's local Z: upright with no rotation) at each bright thing by the water, and let nothing but the water see it:
+
+- the light: `lighting_channels` channel 0 off, channel 1 on; no shadows; `volumetric_scattering_intensity` 0; `indirect_lighting_intensity` 0; inverse-square, in candelas, a reach longer than the river is wide;
+- the water mesh components: channels 0 and 1;
+- tube length one to two times the source's height (a 6 m lamp: 9-12 m; a 20 m shop front: 30 m), radius 0.3 m for a lamp, half the front's width for a wall, the light's colour the source's;
+- strength per square metre of tube seen side-on (`cd = K * 2 * radius * length`), so every image is equally bright whatever its size. Find K with one test frame that runs three strengths along the bank (0.3x, 1x, 3x); in the scene this came from, K about 30 with lamps at 1-2x and wide fronts at 0.4x.
+
+The ripples break each image into dashes; the walls, the fog and the bloom are untouched. Measured on the scene this came from: the frame's share of near-white pixels went from 0.28% to 0.99% (the reference photograph: 1.64%) in one build. Give moving boats, floodlit hotels and screens one each too. Only place them for sources the camera could see reflected: a lamp a street back from the bank gives a column with no cause. Check a low camera near a pier: wide wave slopes close to the lens spread the images into a sheen, and the lamps nearest the lens need the lowest strength.
 
 ## 4. Scanned surfaces without texture coordinates (settled: compiles and reads)
 
